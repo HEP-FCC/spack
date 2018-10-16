@@ -62,6 +62,8 @@ class OmegaH(CMakePackage):
     depends_on('trilinos +kokkos +teuchos', when='+trilinos')
     depends_on('zlib', when='+zlib')
 
+    conflicts('%gcc@8:')
+
     def _bob_options(self):
         cmake_var_prefix = 'Omega_h_CXX_'
         for variant in ['optimize', 'symbols', 'warnings']:
