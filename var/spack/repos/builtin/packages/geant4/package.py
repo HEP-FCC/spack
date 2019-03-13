@@ -7,6 +7,7 @@ from spack import *
 import os
 import glob
 
+import subprocess
 
 class Geant4(CMakePackage):
     """Geant4 is a toolkit for the simulation of the passage of particles
@@ -144,16 +145,15 @@ class Geant4(CMakePackage):
             for d in dirs:
                 target = os.readlink(d)
                 os.symlink(target, os.path.basename(target))
-
-    def setup_dependent_environment(self, spack_env, run_env, dep_spec):
-        version = self.version
-        major = version[0]
-        minor = version[1]
-        if len(version) > 2:
-            patch = version[-1]
-        else:
-            patch = 0
-        datadir = 'Geant4-%s.%s.%s' % (major, minor, patch)
-        spack_env.append_path('CMAKE_MODULE_PATH',
-                              '{0}/{1}/Modules'.format(
-                                  self.prefix.lib64, datadir))
+    
+    def setup_dependent_environment(self, spack_env, run_env, dependent_spec):
+        geant4config = join_path(self.prefix.bin, "geant4-config")
+        process_pipe = subprocess.Popen([geant4config, "--datasets"],
+                                        stdout=subprocess.PIPE)
+        result_datasets = process_pipe.communicate()[0]
+        for line in result_datasets.rstrip("\n").split("\n"):
+            dataset = line.split()
+            # Format: directory name, environment variable, directory path
+            g4variable = dataset[1]
+            g4datapath = dataset[2]
+            run_env.set(g4variable, g4datapath)
