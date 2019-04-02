@@ -580,8 +580,26 @@ class Python(AutotoolsPackage):
         ``packages.yaml`` unknowingly. Query the python executable to
         determine exactly where it is installed."""
 
-        prefix = self.get_config_var('prefix')
-        return Prefix(prefix)
+        # FCC patch
+        #
+        # In our case, we are not using homebrew together with spack, so
+        # it is unlikely to find the corner case mentioned in the docstrings.
+        #
+        # The following command, asks python itself where it is installed,
+        # however this does not work for our case since python is taken from
+        # the LCG releases, present in cvmfs. 
+        # When the following command is invoke, python fails because the 
+        # compiler used to build the package is not configured in the 
+        # environment and hence we cannot go beyond this point. This is a 
+        # showstopper for our workflow as we cannot deploy our centos7 builds
+        # to cvmfs.
+        #
+        # This patch revert this way to get the prefix path and just relies
+        # on the path returned by self.prefix as before.
+
+        # prefix = self.get_config_var('prefix')
+        # return Prefix(prefix)
+        return self.prefix
 
     @property
     def libs(self):
