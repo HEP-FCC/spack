@@ -13,6 +13,17 @@ class Graphviz(AutotoolsPackage):
 
     homepage = 'http://www.graphviz.org'
     git      = 'https://gitlab.com/graphviz/graphviz.git'
+    
+    # FCC Patch
+    #
+    # Graphviz is taken from the LCG Releases where the installed version is
+    # 2.38, if the url line does not exist, the creation of binaries fail
+    # since spack cannot extrapolate the url for the provided version and
+    # cannot determine the source_id of this package.
+    # 
+    # We need this url line until the package version provided by LCG gets
+    # updated
+    url      = 'http://www.graphviz.org/pub/graphviz/stable/SOURCES/graphviz-2.38.0.tar.gz'
 
     # This commit hash is tag='stable_release_2.40.1'
     version('2.40.1', commit='67cd2e5121379a38e0801cc05cce5033f8a2a609')
