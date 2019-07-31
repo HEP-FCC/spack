@@ -3,9 +3,7 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-
 from spack import *
-import platform
 import os
 import glob
 
@@ -41,27 +39,26 @@ class Geant4(CMakePackage):
 
     # C++11 support
     depends_on("xerces-c cxxstd=11", when="cxxstd=11")
-    depends_on("clhep@2.4.0.0 cxxstd=11", when="@10.04 cxxstd=11")
-    depends_on("clhep@2.3.4.6 cxxstd=11", when="@10.03.p03 cxxstd=11")
+    depends_on("clhep@2.3.3.0: cxxstd=11", when="@10.03.p03: cxxstd=11")
     depends_on("vecgeom cxxstd=11", when="+vecgeom cxxstd=11")
 
     # C++14 support
     depends_on("xerces-c cxxstd=14", when="cxxstd=14")
-    depends_on("clhep@2.4.0.0 cxxstd=14", when="@10.04 cxxstd=14")
-    depends_on("clhep@2.3.4.6 cxxstd=14", when="@10.03.p03 cxxstd=14")
+    depends_on("clhep@2.3.3.0: cxxstd=14", when="@10.03.p03: cxxstd=14")
     depends_on("vecgeom cxxstd=14", when="+vecgeom cxxstd=14")
 
     # C++17 support
     depends_on("xerces-c cxxstd=17", when="cxxstd=17")
+    depends_on("clhep@2.3.3.0: cxxstd=17", when="@10.03.p03: cxxstd=17")
     patch('cxx17.patch', when='@:10.03.p99 cxxstd=17')
     patch('cxx17_geant4_10_0.patch', level=1, when='@10.04.00: cxxstd=17')
-    depends_on("clhep@2.4.0.0 cxxstd=17", when="@10.04 cxxstd=17")
-    depends_on("clhep@2.3.4.6 cxxstd=17", when="@10.03.p03 cxxstd=17")
     depends_on("vecgeom cxxstd=17", when="+vecgeom cxxstd=17")
 
     depends_on("expat")
     depends_on("zlib")
-    depends_on("mesa", when='+opengl')
+    depends_on("xerces-c")
+    depends_on("gl", when='+opengl')
+    depends_on("glx", when='+opengl+x11')
     depends_on("libx11", when='+x11')
     depends_on("libxmu", when='+x11')
     depends_on("motif", when='+motif')
@@ -75,12 +72,17 @@ class Geant4(CMakePackage):
     depends_on('geant4-data@10.03.p03', when='@10.03.p03 ~data')
     depends_on('geant4-data@10.04', when='@10.04 ~data')
 
+    # As released, 10.03.03 has issues with respect to using external
+    # CLHEP.
+    patch('CLHEP-10.03.03.patch', level=1, when='@10.03.p03')
+
     def cmake_args(self):
         spec = self.spec
 
         options = [
             '-DGEANT4_USE_GDML=ON',
             '-DGEANT4_USE_SYSTEM_CLHEP=ON',
+            '-DGEANT4_USE_SYSTEM_CLHEP_GRANULAR=ON',
             '-DGEANT4_USE_G3TOG4=ON',
             '-DGEANT4_INSTALL_DATA=ON',
             '-DGEANT4_BUILD_TLS_MODEL=global-dynamic',
@@ -89,8 +91,7 @@ class Geant4(CMakePackage):
             '-DXERCESC_ROOT_DIR:STRING=%s' %
             spec['xerces-c'].prefix, ]
 
-        arch = platform.system().lower()
-        if arch != 'darwin':
+        if 'platform=darwin' not in spec:
             if "+x11" in spec and "+opengl" in spec:
                 options.append('-DGEANT4_USE_OPENGL_X11=ON')
             if "+motif" in spec and "+opengl" in spec:
@@ -144,7 +145,7 @@ class Geant4(CMakePackage):
             for d in dirs:
                 target = os.readlink(d)
                 os.symlink(target, os.path.basename(target))
-                
+    
     def setup_dependent_environment(self, spack_env, run_env, dependent_spec):
         geant4config = join_path(self.prefix.bin, "geant4-config")
         process_pipe = subprocess.Popen([geant4config, "--datasets"],
