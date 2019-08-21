@@ -157,3 +157,4 @@ class Geant4(CMakePackage):
             g4variable = dataset[1]
             g4datapath = dataset[2]
             run_env.set(g4variable, g4datapath)
+            spack_env.set(g4variable, g4datapath)
